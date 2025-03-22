@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Restaurant Listings</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="./styling.css">
+    
+    <style>
+        .nav-pills{
+            margin: 0 auto;
+        }
+        .header>a{
+            margin: 0 auto;
+        }
+        .header{
+            margin-bottom: 0;
+        }
+        .row{
+            margin-top: 0;
+            margin-bottom: 0;
+            font-size: 1.rem;
+        }
+        .pagination{
+            margin-top: 0;
+        }
+        .container{
+            margin:0 auto;
+        }
+        .container>.my-4{
+            text-align: center;
+            color: aliceblue;
+            font-family:'Courier New', Courier, monospace;
+            margin-top: -1;
+            margin-bottom: 0;
+            
+        }
+
+        .card{
+          
+          display:grid;
+          max-height: 450px;
+          height:auto;
+          gap:10px;
+          grid-template-columns: auto;
+          grid-template-rows: 150px 240px 50px;
+           
+          
+          background-color: #5f3214; 
+        }
+        .card.img{
+          margin-bottom:10px;
+          grid-row:1/2;
+          overflow: hidden;
+          height: 100%; 
+        }
+        .card:hover{
+          scale: 1.050; 
+            
+          background-color: #7d4119;
+           
+        }
+        
+        .container>.my-41{
+          margin: 5px;
+          color: aliceblue;
+          text-align: center;
+          font-family: cursive;
+        }
+        .container>.my-41>.card_body{
+          grid-row: 2/3;
+        }
+       
+       .container>.my-41>.card_body>div{
+        grid-row: 3/4;
+       
+       }
+        .container{
+          margin-bottom: 50px;
+        }
+      
+        @keyframes appear {
+          from{
+            opacity: 0;
+            transform:translateX(-100px);
+             
+
+          }
+          to{
+            opacity:1;
+            transform: translateX(0px);
+          }
+          
+        }
+        .block{
+          animation: appear linear;
+          animation-timeline: view();
+          animation-range: entry 0;
+        }
+    </style>
+
+</head>
+<body>
+    <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom" id="scrollspyHeading1"> 
+        
+        <a href="#" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">
+          <img class="object-fit-scale border rounded" width=10% height=auto src="../9fff2221a01549acb721c35983228c7e-free.png" style=margin:5px>
+             <span class="fs-4">Foodie Frontier</span>
+        </a>
+         
+          <ul class="nav nav-pills">
+          <li class="nav-item"><a href="index.html" class="nav-link" >Home</a></li>
+          <li class="nav-item"><a href= "#" class="nav-link">Achievements</a></li>
+          <li class="nav-item"><a href="index.html>" class="nav-link">History</a></li>
+          <li class="nav-item"><a href="index.html" class="nav-link">contact</a></li>
+        </ul>
+      </header>
+    <div class="container">
+        <h1 class="my-41">Restaurants</h1>
+        <div id="restaurant-list" class="row"></div>
+        <nav>
+            <ul id="pagination" class="pagination"></ul>
+        </nav>
+    </div>
+
+    <script>
+        const apiUrl = 'http://localhost:4004/api/restaurants';
+        let currentPage = 1;
+        const itemsPerPage = 8;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchRestaurants(currentPage);
+        });
+
+        function fetchRestaurants(page) {
+            fetch(`${apiUrl}?page=${page}&limit=${itemsPerPage}`)
+                .then(response => response.json())
+                .then(data => {
+                    displayRestaurants(data.restaurants);
+                    setupPagination(data.totalItems, data.currentPage);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        } 
+        function displayRestaurants(restaurants) {
+  const restaurantList = document.getElementById('restaurant-list');
+  restaurantList.innerHTML = '';
+
+  restaurants.forEach(restaurant => {
+    const imageUrl = restaurant.Image_Url && restaurant.Image_Url.trim() !== '' 
+                     ? restaurant.Image_Url 
+                     : 'https://via.placeholder.com/300'; // Fallback image
+    
+    // Convert rating to stars (max 5 stars)
+    const rating = Math.round(restaurant.Aggregate_rating); // Round rating to nearest whole number
+    let stars = '★'.repeat(rating) + '☆'.repeat(5 - rating); // Fill stars dynamically
+
+    const card = document.createElement('div');
+    card.className = 'col-md-3';
+    card.innerHTML = `
+      <div class="card mb-4 shadow-sm">
+        <img src="${imageUrl}" class="card-img-top" alt="${restaurant.Restaurant_name}">
+        <div class="card-body">
+          <h5 class="card-title">${restaurant.Restaurant_name}</h5>
+          <p class="card-text"><strong>Average_Cost_for_two:</strong>${restaurant.Average_Cost_for_two}</p>
+          <p class="card-text"><strong>Address:</strong> ${restaurant.Address}</p>
+          <p class="card-text"><strong>Rating:</strong> <span style="color:${restaurant.Rating_color};">${stars}</span> (${restaurant.Aggregate_rating})</p>
+          <div> 
+          <a href="details.html?id=${restaurant.Restaurant_id}" class="btn btn-primary">View Details</a>
+          <div>
+      </div>
+    `;
+    restaurantList.appendChild(card);
+  });
+}
+
+
+        function setupPagination(totalItems, currentPage) {
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const maxVisiblePages = 10; // Only 10 page numbers visible at a time
+  const pagination = document.getElementById('pagination');
+  pagination.innerHTML = '';
+
+  // Determine the current block of pages
+  const currentBlock = Math.floor((currentPage - 1) / maxVisiblePages);
+  const blockStart = currentBlock * maxVisiblePages + 1;
+  const blockEnd = Math.min(blockStart + maxVisiblePages - 1, totalPages);
+
+  // Create Previous block arrow if needed
+  if (blockStart > 1) {
+    const prevBlockLink = document.createElement('a');
+    prevBlockLink.href = '#';
+    prevBlockLink.innerHTML = '&laquo;';
+    prevBlockLink.className = 'page-link';
+    prevBlockLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      // Navigate to the last page of the previous block
+      const newPage = blockStart - 1;
+      fetchRestaurants(newPage);
+    });
+    const liPrev = document.createElement('li');
+    liPrev.className = 'page-item';
+    liPrev.appendChild(prevBlockLink);
+    pagination.appendChild(liPrev);
+  }
+
+  // Create page number links for the current block
+  for (let i = blockStart; i <= blockEnd; i++) {
+    const pageItem = document.createElement('li');
+    pageItem.className = `page-item ${i === currentPage ? 'active' : ''}`;
+    const pageLink = document.createElement('a');
+    pageLink.href = '#';
+    pageLink.className = 'page-link';
+    pageLink.textContent = i;
+    pageLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      fetchRestaurants(i);
+    });
+    pageItem.appendChild(pageLink);
+    pagination.appendChild(pageItem);
+  }
+
+  // Create Next block arrow if needed
+  if (blockEnd < totalPages) {
+    const nextBlockLink = document.createElement('a');
+    nextBlockLink.href = '#';
+    nextBlockLink.innerHTML = '&raquo;';
+    nextBlockLink.className = 'page-link';
+    nextBlockLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      // Navigate to the first page of the next block
+      const newPage = blockEnd + 1;
+      fetchRestaurants(newPage);
+    });
+    const liNext = document.createElement('li');
+    liNext.className = 'page-item';
+    liNext.appendChild(nextBlockLink);
+    pagination.appendChild(liNext);
+  }
+}
+
+    </script>
+</body>
+</html>

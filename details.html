@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+   </head>
+<style>
+   .card{
+    border:1px solid;
+    color: aliceblue;
+    font-family: cursive;
+    text-align: center;
+    background-color: #4f332c;
+    border-radius: 16px;
+    width: 50%;
+    margin: 0 auto;
+   }
+
+   .card:hover{
+    background-color: #322418;
+   }
+   
+   .card>.card-img-top{
+    border: 1px solid;
+    border-radius: 10px;
+    margin-top:10px
+   }
+   .card>.card-img-top:hover{
+    scale: 1.050;
+   }
+   body { 
+background-color: rgb(44, 133, 211);
+background-image: url('./food.jpg');
+background-repeat: no-repeat;
+background-size: cover;       /* Changed from 'contain' to 'cover' */
+background-position: center; 
+background-attachment: fixed;
+   }
+  
+ .btn-primary {
+    
+    background-color: #0056b3; 
+            border: none;
+        }
+        .btn-primary:hover {
+            
+            background-color: #007bff;
+        }
+        h3{
+            color: aliceblue;
+            font-family: cursive;
+            text-align: center;
+        }
+        p{  text-align: center;
+            font-family: cursive;
+            color:aliceblue;
+        }
+        .btn{
+            width:80px;
+            height: 40px;
+            margin: 10px;
+            border-radius: 4px;
+
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div id="restaurant-details"></div>
+        <div id="event-details"></div>
+    </div>
+
+    <!-- Include Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/[email protected]/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom script to fetch and display details -->
+    <script>
+        // Function to get the restaurant ID from URL
+        function getRestaurantIdFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id'); // Returns the restaurant ID from ?id=RESTAURANT_ID
+        }
+
+        // Fetch and display restaurant and event details
+        function displayDetails() {
+            const restaurantId = getRestaurantIdFromURL();
+            if (!restaurantId) {
+                document.getElementById('restaurant-details').innerHTML = '<p>Restaurant not found!</p>';
+                return;
+            }
+
+            // Define the API endpoints
+            const detailsUrl = `http://localhost:4004/api/restaurant/${restaurantId}`;
+            const eventsUrl = `http://localhost:4004/api/restaurant/${restaurantId}/events`;
+
+            // Fetch data from both endpoints concurrently
+            Promise.all([
+                fetch(detailsUrl).then(response => response.json()),
+                fetch(eventsUrl).then(response => response.json())
+            ])
+            .then(([restaurant, events]) => {
+                if (restaurant.error) {
+                    document.getElementById('restaurant-details').innerHTML = '<p>Restaurant not found!</p>';
+                    return;
+                }
+
+                // Display Restaurant Details
+                document.getElementById('restaurant-details').innerHTML = `
+                    <div class="card">
+                        <img src="${restaurant.Image_Url}" class="card-img-top" alt="${restaurant.Restaurant_name}">
+                        <div class="card-body">
+                            <h2>${restaurant.Restaurant_name}</h2>
+                            <p><strong>Address:</strong> ${restaurant.Address}</p>
+                            <p><strong>Cuisines:</strong> ${restaurant.Cuisines}</p>
+                            <p><strong>Cost for Two:</strong> ₹${restaurant.Average_Cost_for_two}</p>
+                            <p><strong>Rating:</strong> 
+                                <span style="color:${restaurant.Rating_color};">${'★'.repeat(Math.round(restaurant.Aggregate_rating))}</span> 
+                                (${restaurant.Aggregate_rating})
+                            </p>
+                            <p><strong>Votes:</strong> ${restaurant.Votes}</p>
+                            <p><strong>Online Delivery:</strong> ${restaurant.Has_Online_delivery === 'Yes' ? '✅ Available' : '❌ Not Available'}</p>
+                        </div>
+                    </div>
+                `;
+
+                // Display Event Details
+                if (events.length > 0) {
+                    const eventHtml = events.map(event => `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">${event.Event_title}</h5>
+                                <p class="card-text">${event.Event_description}</p>
+                                <p class="card-text"><small class="text-muted">From ${event.Start_date} to ${event.End_date}</small></p>
+                                ${event.book_url ? `<button onclick="window.location.href='${event.book_url}'" class="btn btn-primary">Book Now</button>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                    document.getElementById('event-details').innerHTML = `
+                        <h3>Upcoming Events</h3>
+                        ${eventHtml}
+                    `;
+                } else {
+                    document.getElementById('event-details').innerHTML = '<p>No upcoming events.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                document.getElementById('restaurant-details').innerHTML = '<p>Error loading restaurant details.</p>';
+                document.getElementById('event-details').innerHTML = '<p>Error loading events.</p>';
+            });
+        }
+
+        // Load details on page load
+        document.addEventListener("DOMContentLoaded", displayDetails);
+    </script>  
+</body>
+</html>
